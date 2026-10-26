@@ -3,7 +3,8 @@ name: Deploy DesbravaPro
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -17,23 +18,19 @@ concurrency:
 
 jobs:
   build:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Baixar código
         uses: actions/checkout@v4
 
-      - name: Configurar Node
+      - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-- name: Instalar dependências
-  run: npm install
+      - name: Instalar dependências
+        run: npm install
 
       - name: Compilar aplicação
         run: npm run build
@@ -41,7 +38,7 @@ jobs:
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Preparar arquivos
+      - name: Enviar arquivos compilados
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -49,3 +46,4 @@ jobs:
       - name: Publicar site
         id: deployment
         uses: actions/deploy-pages@v4
+
