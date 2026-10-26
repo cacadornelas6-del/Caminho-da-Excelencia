@@ -18,6 +18,7 @@ import {
 import confetti from 'canvas-confetti';
 import { RankedPathfinder, UnitStat, Pathfinder } from '../types/index.ts';
 import { generateRankingCSV } from '../utils/scoring.ts';
+import { ASSETS } from '../assets/assets.ts';
 
 interface RankingViewProps {
   ranking: RankedPathfinder[];
@@ -156,7 +157,7 @@ export const RankingView: React.FC<RankingViewProps> = ({
                 <div className="relative mb-2">
                   <div className="absolute -top-10 left-1/2 -translate-x-1/2">
                     <img
-                      src="/src/assets/images/ranking_gold_trophy_1793039960458.jpg"
+                      src={ASSETS.trophyGold}
                       alt="Troféu Dourado"
                       referrerPolicy="no-referrer"
                       className="h-12 w-12 rounded-full border border-[#FFC21A] object-cover shadow-lg drop-shadow-[0_4px_10px_rgba(255,194,26,0.5)]"

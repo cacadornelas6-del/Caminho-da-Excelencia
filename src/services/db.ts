@@ -17,12 +17,13 @@ import {
   applyPointsTransaction,
   applyReversalTransaction,
 } from '../utils/scoring.ts';
+import { ASSETS } from '../assets/assets.ts';
 
 // Initial generated visual assets
-const CREST_SHIELD = '/src/assets/images/desbravapro_crest_shield_1793039959775.jpg';
-const AVATAR_DIRECTOR = '/src/assets/images/avatar_director_leader_1793039962613.jpg';
-const AVATAR_BOY = '/src/assets/images/avatar_pathfinder_boy_1793039962110.jpg';
-const AVATAR_GIRL = '/src/assets/images/avatar_pathfinder_girl_1793039963028.jpg';
+const CREST_SHIELD = ASSETS.crestShield;
+const AVATAR_DIRECTOR = ASSETS.avatarDirector;
+const AVATAR_BOY = ASSETS.avatarBoy;
+const AVATAR_GIRL = ASSETS.avatarGirl;
 
 interface StoredDatabase {
   clubs: Record<string, Club>;
@@ -47,7 +48,6 @@ async function hashPassword(password: string): Promise<string> {
 
 function getSeedData(): StoredDatabase {
   const defaultClubId = 'club-pioneiros-colina';
-  const directorId = 'user-diretor-1';
 
   const defaultClub: Club = {
     id: defaultClubId,
@@ -78,6 +78,21 @@ function getSeedData(): StoredDatabase {
         'Estrela da Alvorada',
       ],
     },
+  };
+
+  const adminId = 'user-admin-1';
+  const directorId = 'user-diretor-1';
+
+  const adminUser = {
+    id: adminId,
+    email: 'admin@desbravapro.com.br',
+    fullName: 'Administrador Geral',
+    role: 'admin' as UserRole,
+    clubId: defaultClubId,
+    clubName: defaultClub.name,
+    avatarUrl: AVATAR_DIRECTOR,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    passwordHash: '',
   };
 
   const directorUser = {
@@ -266,7 +281,10 @@ function getSeedData(): StoredDatabase {
 
   const db: StoredDatabase = {
     clubs: { [defaultClubId]: defaultClub },
-    users: { [directorId]: directorUser },
+    users: {
+      [adminId]: adminUser,
+      [directorId]: directorUser,
+    },
     pathfinders: {},
     pointRecords: {},
     auditLogs: initialAudits,
@@ -291,11 +309,8 @@ class DatabaseService {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       const initial = getSeedData();
-      // Hash default password 'desbrava123'
-      const hashed = await hashPassword('desbrava123');
-      for (const uid in initial.users) {
-        initial.users[uid].passwordHash = hashed;
-      }
+      initial.users['user-admin-1'].passwordHash = await hashPassword('admin123');
+      initial.users['user-diretor-1'].passwordHash = await hashPassword('desbrava123');
       this.saveDb(initial);
       this.cache = initial;
       return initial;
@@ -303,9 +318,27 @@ class DatabaseService {
 
     try {
       this.cache = JSON.parse(raw);
+      // Ensure admin exists even if database was initialized in previous version
+      if (this.cache && !this.cache.users['user-admin-1']) {
+        const hashedAdmin = await hashPassword('admin123');
+        this.cache.users['user-admin-1'] = {
+          id: 'user-admin-1',
+          email: 'admin@desbravapro.com.br',
+          fullName: 'Administrador Geral',
+          role: 'admin' as UserRole,
+          clubId: 'club-pioneiros-colina',
+          clubName: 'Clube Pioneiros da Colina',
+          avatarUrl: AVATAR_DIRECTOR,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          passwordHash: hashedAdmin,
+        };
+        this.saveDb(this.cache);
+      }
       return this.cache!;
     } catch {
       const initial = getSeedData();
+      initial.users['user-admin-1'].passwordHash = await hashPassword('admin123');
+      initial.users['user-diretor-1'].passwordHash = await hashPassword('desbrava123');
       this.saveDb(initial);
       this.cache = initial;
       return initial;
@@ -884,6 +917,132 @@ class DatabaseService {
       avatarUrl: newUser.avatarUrl,
       createdAt: newUser.createdAt,
     };
+  }
+
+  async updateLeadershipMember(
+    clubId: string,
+    userId: string,
+    updates: {
+      fullName?: string;
+      email?: string;
+      role?: UserRole;
+      passwordPlain?: string;
+      avatarUrl?: string;
+    }
+  ): Promise<UserProfile> {
+    const db = await this.loadDb();
+    const user = db.users[userId];
+    if (!user || user.clubId !== clubId) {
+      throw new Error('Usuário não encontrado neste clube.');
+    }
+
+    if (updates.email && updates.email.toLowerCase().trim() !== user.email.toLowerCase()) {
+      const cleanEmail = updates.email.toLowerCase().trim();
+      const emailExists = Object.values(db.users).some(
+        (u) => u.id !== userId && u.email.toLowerCase() === cleanEmail
+      );
+      if (emailExists) {
+        throw new Error('Já existe outro usuário cadastrado com este e-mail.');
+      }
+      user.email = cleanEmail;
+    }
+
+    if (updates.fullName && updates.fullName.trim()) {
+      user.fullName = updates.fullName.trim();
+    }
+
+    if (updates.role) {
+      user.role = updates.role;
+    }
+
+    if (updates.avatarUrl !== undefined) {
+      user.avatarUrl = updates.avatarUrl;
+    }
+
+    if (updates.passwordPlain && updates.passwordPlain.trim()) {
+      if (updates.passwordPlain.trim().length < 6) {
+        throw new Error('A nova senha deve ter no mínimo 6 caracteres.');
+      }
+      user.passwordHash = await hashPassword(updates.passwordPlain.trim());
+    }
+
+    db.users[userId] = user;
+    this.saveDb(db);
+
+    // If active session belongs to this user, update session object
+    const session = this.getSession();
+    if (session && session.id === userId) {
+      session.fullName = user.fullName;
+      session.email = user.email;
+      session.role = user.role;
+      if (user.avatarUrl !== undefined) {
+        session.avatarUrl = user.avatarUrl;
+      }
+      this.setSession(session);
+    }
+
+    await this.addAuditLog(clubId, {
+      userId: session?.id || 'system',
+      userName: session?.fullName || 'Admin',
+      action: 'EDICAO_USUARIO',
+      details: `Usuário ${user.fullName} (${user.email}) atualizado.`,
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      clubId: user.clubId,
+      clubName: user.clubName,
+      avatarUrl: user.avatarUrl,
+      createdAt: user.createdAt,
+    };
+  }
+
+  async updateUserAvatar(
+    clubId: string,
+    userId: string,
+    avatarUrl: string
+  ): Promise<UserProfile> {
+    return this.updateLeadershipMember(clubId, userId, { avatarUrl });
+  }
+
+  async deleteLeadershipMember(
+    clubId: string,
+    userId: string,
+    currentUserId: string
+  ): Promise<void> {
+    const db = await this.loadDb();
+    const user = db.users[userId];
+    if (!user || user.clubId !== clubId) {
+      throw new Error('Usuário não encontrado neste clube.');
+    }
+
+    if (userId === currentUserId) {
+      throw new Error('Não é permitido remover a sua própria conta de acesso.');
+    }
+
+    const totalAdminsOrDirectors = Object.values(db.users).filter(
+      (u) => u.clubId === clubId && (u.role === 'admin' || u.role === 'diretor')
+    ).length;
+
+    if ((user.role === 'admin' || user.role === 'diretor') && totalAdminsOrDirectors <= 1) {
+      throw new Error('O clube precisa manter pelo menos um Administrador ou Diretor ativo.');
+    }
+
+    const deletedName = user.fullName;
+    const deletedRole = user.role;
+    delete db.users[userId];
+    this.saveDb(db);
+
+    const session = this.getSession();
+    await this.addAuditLog(clubId, {
+      userId: currentUserId,
+      userName: session?.fullName || 'Admin',
+      action: 'EXCLUSAO_USUARIO',
+      details: `Usuário ${deletedName} (cargo: ${deletedRole}) removido do sistema.`,
+    });
   }
 }
 

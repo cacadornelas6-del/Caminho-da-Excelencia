@@ -6,12 +6,16 @@
 import React from 'react';
 import { Award, Plus, LogOut, Shield, Menu, X } from 'lucide-react';
 import { UserProfile, Club } from '../types/index.ts';
+import { ASSETS } from '../assets/assets.ts';
+import { ProfilePhotoMenu } from './ProfilePhotoMenu.tsx';
 
 interface NavbarProps {
   user: UserProfile;
   club: Club | null;
   onOpenScoring: () => void;
   onLogout: () => void;
+  onUpdateUserPhoto?: (photoUrl: string) => void;
+  onRemoveUserPhoto?: () => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
 }
@@ -21,6 +25,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   club,
   onOpenScoring,
   onLogout,
+  onUpdateUserPhoto,
+  onRemoveUserPhoto,
   mobileMenuOpen,
   setMobileMenuOpen,
 }) => {
@@ -72,11 +78,18 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         <div className="flex items-center gap-2 pl-2 border-l border-[#092642]">
-          <img
-            src={user.avatarUrl || '/src/assets/images/avatar_director_leader_1793039962613.jpg'}
-            alt={user.fullName}
-            referrerPolicy="no-referrer"
-            className="h-8 w-8 rounded-full border border-[#FFC21A]/40 object-cover shrink-0"
+          <ProfilePhotoMenu
+            photoUrl={user.avatarUrl}
+            defaultPhotoUrl={ASSETS.avatarDirector}
+            userName={user.fullName}
+            subtitle={user.role}
+            size="sm"
+            onUpdatePhoto={(newPhoto) => {
+              if (onUpdateUserPhoto) onUpdateUserPhoto(newPhoto);
+            }}
+            onRemovePhoto={() => {
+              if (onRemoveUserPhoto) onRemoveUserPhoto();
+            }}
           />
           <div className="hidden md:block text-left">
             <div className="text-xs font-semibold text-white leading-tight truncate max-w-[140px]">

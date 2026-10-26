@@ -16,6 +16,8 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { Pathfinder, PointRecord } from '../types/index.ts';
+import { ASSETS } from '../assets/assets.ts';
+import { ProfilePhotoMenu } from './ProfilePhotoMenu.tsx';
 
 interface PathfinderProfileDrawerProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ interface PathfinderProfileDrawerProps {
   records: PointRecord[];
   rankPosition?: number;
   onOpenScoringForMember: (pfId: string) => void;
+  onUpdatePhoto?: (newPhoto: string) => void;
 }
 
 export const PathfinderProfileDrawer: React.FC<PathfinderProfileDrawerProps> = ({
@@ -33,6 +36,7 @@ export const PathfinderProfileDrawer: React.FC<PathfinderProfileDrawerProps> = (
   records,
   rankPosition,
   onOpenScoringForMember,
+  onUpdatePhoto,
 }) => {
   if (!isOpen || !pathfinder) return null;
 
@@ -88,11 +92,20 @@ export const PathfinderProfileDrawer: React.FC<PathfinderProfileDrawerProps> = (
         <div className="mt-5 rounded-2xl border border-[#092642] bg-gradient-to-r from-[#092642]/80 via-[#031426] to-[#092642]/50 p-5 shadow-lg">
           <div className="flex flex-col sm:flex-row items-center gap-5">
             <div className="relative">
-              <img
-                src={pathfinder.photoUrl || '/src/assets/images/avatar_pathfinder_boy_1793039962110.jpg'}
-                alt={pathfinder.fullName}
-                referrerPolicy="no-referrer"
-                className="h-24 w-24 rounded-2xl border-2 border-[#FFC21A] object-cover shadow-xl"
+              <ProfilePhotoMenu
+                photoUrl={pathfinder.photoUrl}
+                defaultPhotoUrl={ASSETS.avatarBoy}
+                userName={pathfinder.fullName}
+                subtitle={`${pathfinder.unit} · ${pathfinder.currentClass}`}
+                size="xl"
+                shape="rounded"
+                canEdit={!!onUpdatePhoto}
+                onUpdatePhoto={(newPhoto) => {
+                  if (onUpdatePhoto) onUpdatePhoto(newPhoto);
+                }}
+                onRemovePhoto={() => {
+                  if (onUpdatePhoto) onUpdatePhoto(ASSETS.avatarBoy);
+                }}
               />
               {rankPosition && rankPosition <= 3 && (
                 <div

@@ -258,6 +258,82 @@ export default function App() {
     setAuditLogs(logs);
   };
 
+  const handleEditLeadershipMember = async (
+    userId: string,
+    data: {
+      fullName: string;
+      email: string;
+      role: UserRole;
+      passwordPlain?: string;
+      avatarUrl?: string;
+    }
+  ) => {
+    if (!currentUser || !club) return;
+    const updated = await dbService.updateLeadershipMember(
+      currentUser.clubId,
+      userId,
+      data
+    );
+    setLeadership((prev) =>
+      prev.map((m) => (m.id === updated.id ? updated : m))
+    );
+    if (currentUser.id === updated.id) {
+      setCurrentUser(updated);
+    }
+    const logs = await dbService.getAuditLogs(currentUser.clubId);
+    setAuditLogs(logs);
+  };
+
+  const handleDeleteLeadershipMember = async (userId: string) => {
+    if (!currentUser || !club) return;
+    await dbService.deleteLeadershipMember(
+      currentUser.clubId,
+      userId,
+      currentUser.id
+    );
+    setLeadership((prev) => prev.filter((m) => m.id !== userId));
+    const logs = await dbService.getAuditLogs(currentUser.clubId);
+    setAuditLogs(logs);
+  };
+
+  const handleUpdateCurrentUserPhoto = async (newPhotoUrl: string) => {
+    if (!currentUser || !club) return;
+    try {
+      const updated = await dbService.updateUserAvatar(
+        currentUser.clubId,
+        currentUser.id,
+        newPhotoUrl
+      );
+      setCurrentUser(updated);
+      setLeadership((prev) =>
+        prev.map((m) => (m.id === updated.id ? updated : m))
+      );
+      const logs = await dbService.getAuditLogs(currentUser.clubId);
+      setAuditLogs(logs);
+    } catch (err: unknown) {
+      console.error('Erro ao atualizar foto de perfil:', err);
+    }
+  };
+
+  const handleRemoveCurrentUserPhoto = async () => {
+    if (!currentUser || !club) return;
+    try {
+      const updated = await dbService.updateUserAvatar(
+        currentUser.clubId,
+        currentUser.id,
+        ''
+      );
+      setCurrentUser(updated);
+      setLeadership((prev) =>
+        prev.map((m) => (m.id === updated.id ? updated : m))
+      );
+      const logs = await dbService.getAuditLogs(currentUser.clubId);
+      setAuditLogs(logs);
+    } catch (err: unknown) {
+      console.error('Erro ao remover foto de perfil:', err);
+    }
+  };
+
   const handleOpenScoringForMember = (pfId: string) => {
     setScoringPreselectedPfId(pfId);
     setIsScoringModalOpen(true);
@@ -312,6 +388,8 @@ export default function App() {
           setIsScoringModalOpen(true);
         }}
         onLogout={handleLogout}
+        onUpdateUserPhoto={handleUpdateCurrentUserPhoto}
+        onRemoveUserPhoto={handleRemoveCurrentUserPhoto}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
       />
@@ -410,6 +488,8 @@ export default function App() {
               leadership={leadership}
               onUpdateClub={handleUpdateClub}
               onAddLeadershipMember={handleAddLeadershipMember}
+              onEditLeadershipMember={handleEditLeadershipMember}
+              onDeleteLeadershipMember={handleDeleteLeadershipMember}
             />
           )}
         </main>
@@ -447,6 +527,19 @@ export default function App() {
             : undefined
         }
         onOpenScoringForMember={handleOpenScoringForMember}
+        onUpdatePhoto={async (newPhoto) => {
+          if (selectedDrawerPf && club) {
+            const updated = await dbService.updatePathfinder(
+              club.id,
+              selectedDrawerPf.id,
+              { photoUrl: newPhoto }
+            );
+            setPathfinders((prev) =>
+              prev.map((p) => (p.id === updated.id ? updated : p))
+            );
+            setSelectedDrawerPf(updated);
+          }
+        }}
       />
 
       <ReversalModal

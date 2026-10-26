@@ -8,6 +8,8 @@ import { X, UserPlus, Upload, Image as ImageIcon, CheckCircle, AlertCircle } fro
 import { Pathfinder, PathfinderStatus } from '../types/index.ts';
 import { PATHFINDER_CLASSES } from '../data/curriculum.ts';
 import { compressImage } from '../utils/imageCompressor.ts';
+import { ASSETS } from '../assets/assets.ts';
+import { ProfilePhotoMenu } from './ProfilePhotoMenu.tsx';
 
 interface PathfinderModalProps {
   isOpen: boolean;
@@ -26,9 +28,9 @@ interface PathfinderModalProps {
 }
 
 const PRESET_AVATARS = [
-  { label: 'Desbravador 1', url: '/src/assets/images/avatar_pathfinder_boy_1793039962110.jpg' },
-  { label: 'Desbravadora 1', url: '/src/assets/images/avatar_pathfinder_girl_1793039963028.jpg' },
-  { label: 'Líder / Diretor', url: '/src/assets/images/avatar_director_leader_1793039962613.jpg' },
+  { label: 'Desbravador 1', url: ASSETS.avatarBoy },
+  { label: 'Desbravadora 1', url: ASSETS.avatarGirl },
+  { label: 'Líder / Diretor', url: ASSETS.avatarDirector },
 ];
 
 export const PathfinderModal: React.FC<PathfinderModalProps> = ({
@@ -170,11 +172,20 @@ export const PathfinderModal: React.FC<PathfinderModalProps> = ({
               Fotografia do Perfil (Comprimida para Supabase Storage)
             </label>
             <div className="flex items-center gap-4">
-              <img
-                src={photoUrl || PRESET_AVATARS[0].url}
-                alt="Avatar atual"
-                referrerPolicy="no-referrer"
-                className="h-16 w-16 rounded-full border-2 border-[#FFC21A] object-cover shadow-md"
+              <ProfilePhotoMenu
+                photoUrl={photoUrl || PRESET_AVATARS[0].url}
+                defaultPhotoUrl={PRESET_AVATARS[0].url}
+                userName={fullName || 'Desbravador'}
+                subtitle={currentClass}
+                size="lg"
+                onUpdatePhoto={(newPhoto) => {
+                  setPhotoUrl(newPhoto);
+                  setCompressionFeedback('Foto atualizada com sucesso!');
+                }}
+                onRemovePhoto={() => {
+                  setPhotoUrl(PRESET_AVATARS[0].url);
+                  setCompressionFeedback('Foto redefinida para o avatar padrão.');
+                }}
               />
               <div className="space-y-1.5 flex-1">
                 <div className="flex items-center gap-2">

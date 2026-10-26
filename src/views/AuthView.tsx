@@ -18,6 +18,7 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { UserProfile } from '../types/index.ts';
+import { ASSETS } from '../assets/assets.ts';
 
 interface AuthViewProps {
   onLogin: (email: string, pass: string) => Promise<UserProfile>;
@@ -42,8 +43,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [mode, setMode] = useState<'login' | 'register' | 'recover'>('login');
 
   // Login inputs
-  const [email, setEmail] = useState<string>('diretoria@desbravapro.com.br');
-  const [password, setPassword] = useState<string>('desbrava123');
+  const [email, setEmail] = useState<string>('admin@desbravapro.com.br');
+  const [password, setPassword] = useState<string>('admin123');
 
   // Register club inputs
   const [clubName, setClubName] = useState<string>('');
@@ -118,7 +119,13 @@ export const AuthView: React.FC<AuthViewProps> = ({
     }
   };
 
-  const fillDemoLogin = () => {
+  const fillAdminLogin = () => {
+    setEmail('admin@desbravapro.com.br');
+    setPassword('admin123');
+    setMode('login');
+  };
+
+  const fillDirectorLogin = () => {
     setEmail('diretoria@desbravapro.com.br');
     setPassword('desbrava123');
     setMode('login');
@@ -131,7 +138,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-3">
             <img
-              src="/src/assets/images/desbravapro_crest_shield_1793039959775.jpg"
+              src={ASSETS.crestShield}
               alt="DesbravaPro Brasão"
               referrerPolicy="no-referrer"
               className="h-20 w-20 rounded-2xl border-2 border-[#FFC21A] object-cover shadow-2xl shadow-[#FFC21A]/20 drop-shadow-[0_10px_25px_rgba(255,194,26,0.25)]"
@@ -254,15 +261,22 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 <ArrowRight className="h-4 w-4" />
               </button>
 
-              {/* Demo 1-Click Access Shortcut */}
-              <div className="pt-2 text-center">
+              {/* Demo 1-Click Access Shortcuts */}
+              <div className="pt-2 flex flex-col gap-1.5 text-center">
                 <button
                   type="button"
-                  onClick={fillDemoLogin}
-                  className="inline-flex items-center gap-1.5 text-[11px] text-[#8FA6C2] hover:text-[#FFC21A] transition-colors cursor-pointer"
+                  onClick={fillAdminLogin}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-purple-900/50 bg-purple-950/30 py-1.5 px-3 text-[11px] font-semibold text-purple-300 hover:bg-purple-950/60 transition-colors cursor-pointer"
                 >
                   <Sparkles className="h-3 w-3 text-[#FFC21A]" />
-                  <span>Usar credenciais de demonstração (Clube Pioneiros)</span>
+                  <span>Entrar como Administrador (admin@desbravapro.com.br)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={fillDirectorLogin}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#092642] bg-[#092642]/40 py-1.5 px-3 text-[11px] text-slate-300 hover:text-white transition-colors cursor-pointer"
+                >
+                  <span>Entrar como Diretor (diretoria@desbravapro.com.br)</span>
                 </button>
               </div>
             </form>

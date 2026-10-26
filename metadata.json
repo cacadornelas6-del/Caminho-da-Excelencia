@@ -2,5 +2,7 @@
   "name": "DesbravaPro",
   "description": "Plataforma completa de gestão, pontuação e ranking de excelência para Clubes de Desbravadores da Igreja Adventista.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
